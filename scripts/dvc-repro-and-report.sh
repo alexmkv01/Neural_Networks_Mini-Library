@@ -9,8 +9,8 @@ dvc pull --run-cache --allow-missing --force
 } || {
     printf "Saving partial output and artifacts\n"
     dvc push
-    git add .
-    git commit -m "dvc pipeline failed to complete [skip ci]"
+    git add dvc.lock artifacts/
+    git commit -m "[FAILED] dvc pipeline failed to complete [skip ci]"
     git push
     exit 1
 }
@@ -19,8 +19,8 @@ echo "Saving reproduced output and artifacts"
 dvc push
 
 # Commit pipeline outputs
-git add .
-git commit --allow-empty -m "(feat) dvc pipeline reproduced [skip ci]"
+git add dvc.lock artifacts/
+git commit --allow-empty -m "dvc pipeline reproduced [skip ci]"
 git push
 
 # Build report
@@ -31,7 +31,7 @@ git fetch --prune
     printf "\n"
     printf "### Pipeline Status\n\n"
     dvc status || printf "All stages are up-to-date.\n"
-} > comment.md
+} >comment.md
 
 # Post report as PR comment
 gh pr --repo "$GITHUB_REPOSITORY" \

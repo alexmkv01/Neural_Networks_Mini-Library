@@ -1,0 +1,7 @@
+# DVC-managed data artifacts (not git-tracked)
+/train_x.npy
+/val_x.npy
+/train_y.npy
+/val_y.npy
+/preprocessor.pkl
+/model.pkl

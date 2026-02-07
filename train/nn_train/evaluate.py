@@ -1,4 +1,4 @@
-"""Evaluation stage: load model, compute metrics, write metrics.json."""
+"""Evaluation stage: load model, compute metrics, write evaluate-metrics.json."""
 
 import json
 import logging
@@ -13,17 +13,17 @@ from nn_train._paths import ARTIFACTS_DIR
 logger = logging.getLogger(__name__)
 
 
-def _load_model_and_data() -> tuple[
-    MultiLayerNetwork,
-    npt.NDArray[np.float64],
-    npt.NDArray[np.float64],
-]:
-    """Load the trained model and validation data from artifacts/."""
-    logger.info("Loading model and validation data from %s", ARTIFACTS_DIR)
-    model = MultiLayerNetwork.load(ARTIFACTS_DIR / "model.pkl")
-    x_val: npt.NDArray[np.float64] = np.load(ARTIFACTS_DIR / "val_x.npy")
-    y_val: npt.NDArray[np.float64] = np.load(ARTIFACTS_DIR / "val_y.npy")
-    return model, x_val, y_val
+def _load_model() -> MultiLayerNetwork:
+    """Load the trained model from artifacts/."""
+    logger.info("Loading model from %s", ARTIFACTS_DIR)
+    return MultiLayerNetwork.load(ARTIFACTS_DIR / "model.pkl")
+
+
+def _load_split(name: str) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Load a preprocessed data split (val or test) from artifacts/."""
+    x: npt.NDArray[np.float64] = np.load(ARTIFACTS_DIR / f"{name}_x.npy")
+    y: npt.NDArray[np.float64] = np.load(ARTIFACTS_DIR / f"{name}_y.npy")
+    return x, y
 
 
 def compute_accuracy(
@@ -38,37 +38,39 @@ def compute_accuracy(
 
 def evaluate(
     model: MultiLayerNetwork,
-    x_val: npt.NDArray[np.float64],
-    y_val: npt.NDArray[np.float64],
+    x: npt.NDArray[np.float64],
+    y: npt.NDArray[np.float64],
+    split_name: str,
 ) -> dict[str, float]:
-    """Run evaluation and return metrics dict.
+    """Run evaluation on a single data split and return prefixed metrics.
 
     Args:
         model: Trained neural network.
-        x_val: Preprocessed validation features.
-        y_val: Validation target labels (one-hot).
+        x: Preprocessed features.
+        y: Target labels (one-hot).
+        split_name: Label for the split (e.g. "val", "test"), used as metric key prefix.
 
     Returns:
-        Dictionary with val_loss and val_accuracy.
+        Dictionary with {split_name}_loss and {split_name}_accuracy.
     """
-    predictions = model.forward(x_val)
+    predictions = model.forward(x)
 
     loss_fn = CrossEntropyLoss()
-    val_loss = loss_fn.forward(predictions, y_val)
-    accuracy = compute_accuracy(predictions, y_val)
+    loss = loss_fn.forward(predictions, y)
+    accuracy = compute_accuracy(predictions, y)
 
-    logger.info("Validation loss: %.6f", val_loss)
-    logger.info("Validation accuracy: %.2f%%", accuracy * 100)
+    logger.info("%s loss: %.6f", split_name, loss)
+    logger.info("%s accuracy: %.2f%%", split_name, accuracy * 100)
 
     return {
-        "val_loss": round(val_loss, 6),
-        "val_accuracy": round(accuracy, 4),
+        f"{split_name}_loss": round(loss, 6),
+        f"{split_name}_accuracy": round(accuracy, 4),
     }
 
 
 def _save_metrics(metrics: dict[str, float]) -> None:
-    """Write metrics dict to artifacts/metrics.json."""
-    metrics_path = ARTIFACTS_DIR / "metrics.json"
+    """Write metrics dict to artifacts/evaluate-metrics.json."""
+    metrics_path = ARTIFACTS_DIR / "evaluate-metrics.json"
     with open(metrics_path, "w") as f:
         json.dump(metrics, f, indent=2)
     logger.info("Metrics written to %s", metrics_path)
@@ -76,13 +78,15 @@ def _save_metrics(metrics: dict[str, float]) -> None:
 
 def main() -> None:
     """Orchestrate the evaluate stage."""
-    # Setup
-    model, x_val, y_val = _load_model_and_data()
+    model = _load_model()
 
-    # Evaluate
-    metrics = evaluate(model, x_val, y_val)
+    x_val, y_val = _load_split("val")
+    x_test, y_test = _load_split("test")
 
-    # Save
+    metrics: dict[str, float] = {}
+    metrics.update(evaluate(model, x_val, y_val, "val"))
+    metrics.update(evaluate(model, x_test, y_test, "test"))
+
     _save_metrics(metrics)
 
 

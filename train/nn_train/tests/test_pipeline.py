@@ -16,22 +16,26 @@ from nn_train.prepare import load_and_split
 
 class TestPrepare:
     def test_load_and_split_shapes(self) -> None:
-        """Verify the train/val split produces correct shapes."""
+        """Verify the 3-way split produces correct shapes."""
         with tempfile.NamedTemporaryFile(suffix=".dat", mode="w", delete=False) as f:
-            data = np.random.default_rng(0).standard_normal((50, 7))
+            data = np.random.default_rng(0).standard_normal((100, 7))
             data[:, 4:] = 0.0
-            classes = np.random.default_rng(0).integers(0, 3, 50)
-            data[np.arange(50), 4 + classes] = 1.0
+            classes = np.random.default_rng(0).integers(0, 3, 100)
+            data[np.arange(100), 4 + classes] = 1.0
             np.savetxt(f.name, data)
             path = Path(f.name)
 
-        x_train, x_val, y_train, y_val = load_and_split(path, test_split=0.2, random_seed=42)
+        x_train, x_val, x_test, y_train, y_val, y_test = load_and_split(
+            path, val_split=0.15, test_split=0.15, random_seed=42
+        )
 
-        assert x_train.shape[0] == 40
-        assert x_val.shape[0] == 10
+        assert x_train.shape[0] == 70
+        assert x_val.shape[0] == 15
+        assert x_test.shape[0] == 15
         assert x_train.shape[1] == 4
         assert y_train.shape[1] == 3
         assert y_val.shape[1] == 3
+        assert y_test.shape[1] == 3
 
         path.unlink()
 
@@ -42,8 +46,8 @@ class TestPrepare:
             np.savetxt(f.name, data)
             path = Path(f.name)
 
-        result_1 = load_and_split(path, test_split=0.3, random_seed=99)
-        result_2 = load_and_split(path, test_split=0.3, random_seed=99)
+        result_1 = load_and_split(path, val_split=0.2, test_split=0.1, random_seed=99)
+        result_2 = load_and_split(path, val_split=0.2, test_split=0.1, random_seed=99)
 
         for arr1, arr2 in zip(result_1, result_2, strict=True):
             np.testing.assert_array_equal(arr1, arr2)
@@ -63,13 +67,12 @@ class TestEvaluate:
         assert compute_accuracy(predictions, targets) == 0.0
 
     def test_evaluate_returns_expected_keys(self) -> None:
-        np.random.seed(42)
-        model = MultiLayerNetwork(4, [16, 3], ["relu", "identity"])
-        x_val = np.random.default_rng(0).standard_normal((10, 4))
-        y_val = np.zeros((10, 3))
-        y_val[np.arange(10), np.random.default_rng(0).integers(0, 3, 10)] = 1.0
+        model = MultiLayerNetwork(4, [16, 3], ["relu", "identity"], rng=np.random.default_rng(42))
+        x = np.random.default_rng(0).standard_normal((10, 4))
+        y = np.zeros((10, 3))
+        y[np.arange(10), np.random.default_rng(0).integers(0, 3, 10)] = 1.0
 
-        metrics = evaluate(model, x_val, y_val)
+        metrics = evaluate(model, x, y, "val")
 
         assert "val_loss" in metrics
         assert "val_accuracy" in metrics
