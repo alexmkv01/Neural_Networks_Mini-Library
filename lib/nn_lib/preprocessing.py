@@ -8,7 +8,8 @@ class Preprocessor:
     """Min-max normalization to [0, 1] with NaN-safe median imputation.
 
     Fit on training data, then apply to both train and validation sets.
-    Handles constant features (zero range) without producing NaN/inf.
+    Handles constant features (zero range) without producing NaN/inf —
+    constant features map to 0.0 after normalization.
 
     Example:
         >>> prep = Preprocessor(x_train)
@@ -26,11 +27,8 @@ class Preprocessor:
 
     def apply(self, data: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         """Normalize data to [0, 1] range, imputing NaN with column medians."""
-        result = data.copy()
-        nan_mask = np.isnan(result)
-        if np.any(nan_mask):
-            for col in range(result.shape[1]):
-                result[nan_mask[:, col], col] = self._medians[col]
+        # medians computed at fit time
+        result = np.where(np.isnan(data), self._medians, data)
         return (result - self._min) / self._range
 
     def revert(self, data: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:

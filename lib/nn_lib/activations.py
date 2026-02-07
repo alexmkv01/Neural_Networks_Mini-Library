@@ -4,6 +4,7 @@ import numpy as np
 import numpy.typing as npt
 
 from nn_lib.base import Layer
+from nn_lib.exceptions import ForwardNotCalledError
 
 
 class SigmoidLayer(Layer):
@@ -13,14 +14,14 @@ class SigmoidLayer(Layer):
         self._cache: npt.NDArray[np.float64] | None = None
 
     def forward(self, x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        self._cache = x
-        return 1.0 / (1.0 + np.exp(-x))
+        output: npt.NDArray[np.float64] = 1.0 / (1.0 + np.exp(-x))
+        self._cache = output
+        return output
 
     def backward(self, grad_z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         if self._cache is None:
-            raise ValueError("forward() must be called before backward()")
-        sigmoid_x = self.forward(self._cache)
-        return grad_z * sigmoid_x * (1.0 - sigmoid_x)
+            raise ForwardNotCalledError("SigmoidLayer")
+        return grad_z * self._cache * (1.0 - self._cache)
 
 
 class ReluLayer(Layer):
@@ -35,7 +36,7 @@ class ReluLayer(Layer):
 
     def backward(self, grad_z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         if self._cache is None:
-            raise ValueError("forward() must be called before backward()")
+            raise ForwardNotCalledError("ReluLayer")
         return grad_z * (self._cache > 0).astype(np.float64)
 
 
@@ -52,7 +53,7 @@ class TanhLayer(Layer):
 
     def backward(self, grad_z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         if self._cache is None:
-            raise ValueError("forward() must be called before backward()")
+            raise ForwardNotCalledError("TanhLayer")
         return grad_z * (1.0 - self._cache**2)
 
 

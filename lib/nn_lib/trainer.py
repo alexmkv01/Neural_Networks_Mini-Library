@@ -1,16 +1,16 @@
 """Mini-batch gradient descent trainer for neural networks."""
 
-from typing import Literal, TypedDict
+from typing import Literal, NotRequired, TypedDict
 
 import numpy as np
 import numpy.typing as npt
 
-from nn_lib.losses import CrossEntropyLoss, MSELoss
+from nn_lib.losses import CrossEntropyLoss, Loss, MSELoss
 from nn_lib.network import MultiLayerNetwork
 
 LossType = Literal["mse", "cross_entropy"]
 
-_LOSS_MAP: dict[str, type[MSELoss | CrossEntropyLoss]] = {
+_LOSS_MAP: dict[str, type[Loss]] = {
     "mse": MSELoss,
     "cross_entropy": CrossEntropyLoss,
 }
@@ -20,10 +20,11 @@ class TrainerHyperparams(TypedDict):
     """Typed hyperparameters for the Trainer."""
 
     batch_size: int
-    nb_epoch: int
+    epochs: int
     learning_rate: float
-    loss_fun: LossType
-    shuffle_flag: bool
+    loss: LossType
+    shuffle: bool
+    seed: NotRequired[int]
 
 
 class Trainer:
@@ -38,15 +39,16 @@ class Trainer:
         network: MultiLayerNetwork,
         hyperparams: TrainerHyperparams,
     ) -> None:
-        loss_fun = hyperparams["loss_fun"]
-        if loss_fun not in _LOSS_MAP:
-            raise ValueError(f"Unknown loss: {loss_fun!r}. Choose from {list(_LOSS_MAP)}")
+        loss = hyperparams["loss"]
+        if loss not in _LOSS_MAP:
+            raise ValueError(f"Unknown loss: {loss!r}. Choose from {list(_LOSS_MAP)}")
         self.network = network
         self.batch_size = hyperparams["batch_size"]
-        self.nb_epoch = hyperparams["nb_epoch"]
+        self.epochs = hyperparams["epochs"]
         self.learning_rate = hyperparams["learning_rate"]
-        self.shuffle_flag = hyperparams["shuffle_flag"]
-        self._loss_layer = _LOSS_MAP[loss_fun]()
+        self.shuffle = hyperparams["shuffle"]
+        self._loss_layer = _LOSS_MAP[loss]()
+        self._rng = np.random.default_rng(hyperparams.get("seed"))
 
     def train(
         self,
@@ -60,8 +62,8 @@ class Trainer:
             y: Training target labels.
         """
         n_samples = x.shape[0]
-        for _ in range(self.nb_epoch):
-            x_epoch, y_epoch = _shuffle(x, y) if self.shuffle_flag else (x, y)
+        for _ in range(self.epochs):
+            x_epoch, y_epoch = _shuffle(self._rng, x, y) if self.shuffle else (x, y)
             for start in range(0, n_samples, self.batch_size):
                 end = min(start + self.batch_size, n_samples)
                 x_batch = x_epoch[start:end]
@@ -78,16 +80,21 @@ class Trainer:
         x: npt.NDArray[np.float64],
         y: npt.NDArray[np.float64],
     ) -> float:
-        """Compute loss on a dataset without updating parameters."""
+        """Compute loss on a dataset without updating parameters.
+
+        Warning:
+            Mutates internal forward-pass caches on the network and loss
+            layer. Do not interleave with training without re-forwarding.
+        """
         predictions = self.network.forward(x)
         return self._loss_layer.forward(predictions, y)
 
 
 def _shuffle(
+    rng: np.random.Generator,
     x: npt.NDArray[np.float64],
     y: npt.NDArray[np.float64],
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Shuffle x and y with the same random permutation."""
-    rng = np.random.default_rng(seed=0)
     indices = rng.permutation(x.shape[0])
     return x[indices], y[indices]

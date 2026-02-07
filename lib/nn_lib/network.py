@@ -1,6 +1,7 @@
 """Multi-layer feedforward neural network."""
 
 import pickle
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
@@ -10,6 +11,15 @@ import numpy.typing as npt
 from nn_lib.activations import IdentityLayer, ReluLayer, SigmoidLayer, TanhLayer
 from nn_lib.base import Layer
 from nn_lib.layers import LinearLayer
+
+
+@dataclass
+class LayerGroup:
+    """A linear layer paired with its activation."""
+
+    linear: LinearLayer
+    activation: Layer
+
 
 ActivationType = Literal["relu", "sigmoid", "tanh", "identity"]
 
@@ -37,35 +47,36 @@ class MultiLayerNetwork:
         input_dim: int,
         neurons: list[int],
         activations: list[ActivationType],
+        rng: np.random.Generator | None = None,
     ) -> None:
         if len(neurons) != len(activations):
             raise ValueError(
                 f"neurons ({len(neurons)}) and activations ({len(activations)}) "
                 f"must have the same length"
             )
-        self._layers = _build_layers(input_dim, neurons, activations)
+        rng = rng if rng is not None else np.random.default_rng()
+        self._layers = _build_layers(input_dim, neurons, activations, rng)
 
     def forward(self, x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         """Forward pass through all layers sequentially."""
         output = x
-        for layer_group in self._layers:
-            for layer in layer_group:
-                output = layer.forward(output)
+        for group in self._layers:
+            output = group.linear.forward(output)
+            output = group.activation.forward(output)
         return output
 
     def backward(self, grad_z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         """Backward pass through all layers in reverse order."""
         grad = grad_z
-        for layer_group in reversed(self._layers):
-            for layer in reversed(layer_group):
-                grad = layer.backward(grad)
+        for group in reversed(self._layers):
+            grad = group.activation.backward(grad)
+            grad = group.linear.backward(grad)
         return grad
 
     def update_params(self, learning_rate: float) -> None:
         """Update parameters of all learnable layers."""
-        for layer_group in self._layers:
-            for layer in layer_group:
-                layer.update_params(learning_rate)
+        for group in self._layers:
+            group.linear.update_params(learning_rate)
 
     def save(self, path: Path) -> None:
         """Serialize the network to a pickle file."""
@@ -76,7 +87,9 @@ class MultiLayerNetwork:
     def load(path: Path) -> "MultiLayerNetwork":
         """Deserialize a network from a pickle file."""
         with open(path, "rb") as f:
-            network: MultiLayerNetwork = pickle.load(f)
+            network = pickle.load(f)
+        if not isinstance(network, MultiLayerNetwork):
+            raise TypeError(f"Expected MultiLayerNetwork, got {type(network).__name__} from {path}")
         return network
 
     def __call__(self, x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
@@ -87,17 +100,15 @@ def _build_layers(
     input_dim: int,
     neurons: list[int],
     activations: list[ActivationType],
-) -> list[list[Layer]]:
-    """Construct layer groups from architecture specification.
-
-    Each group is [LinearLayer, ActivationLayer].
-    """
-    layers: list[list[Layer]] = []
+    rng: np.random.Generator,
+) -> list[LayerGroup]:
+    """Construct layer groups from architecture specification."""
+    layers: list[LayerGroup] = []
     prev_dim = input_dim
     for n_out, act_name in zip(neurons, activations, strict=True):
-        linear = LinearLayer(prev_dim, n_out)
+        linear = LinearLayer(prev_dim, n_out, rng)
         activation = _create_activation(act_name)
-        layers.append([linear, activation])
+        layers.append(LayerGroup(linear=linear, activation=activation))
         prev_dim = n_out
     return layers
 

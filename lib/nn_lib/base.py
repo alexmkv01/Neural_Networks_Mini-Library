@@ -21,5 +21,4 @@ class Layer(ABC):
         """Update learnable parameters. No-op for layers without parameters."""
 
     def __call__(self, x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        """Allow layers to be called like functions."""
         return self.forward(x)
