@@ -28,6 +28,10 @@ build/
 # DVC pipeline artifacts (reproduced via dvc repro)
 /artifacts/
 
+# Local environment (direnv)
+.envrc
+.direnv/
+
 # Agent instructions (local dev only)
 AGENTS.md
 
