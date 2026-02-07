@@ -9,14 +9,18 @@ stages:
       size: 26250
     - path: train/nn_train/prepare.py
       hash: md5
-      md5: ab44305bbca3ef3f4c47e46a5a99da27
-      size: 3586
+      md5: 381091159e27d9b44abadcd232dbe19f
+      size: 4441
     params:
       params.yaml:
         prepare:
           test_split: 0.2
           random_seed: 42
     outs:
+    - path: artifacts/prepare-metrics.json
+      hash: md5
+      md5: 31d04745123278132ce90e31ce33d0fa
+      size: 160
     - path: artifacts/preprocessor.pkl
       hash: md5
       md5: e2943fd9ca837573e5a661639b26d7f4
@@ -54,13 +58,13 @@ stages:
       size: 3008
     - path: lib/nn_lib/
       hash: md5
-      md5: 4328d43795d82cae66134d6b3b5f76a7.dir
-      size: 140219
+      md5: e4007381582e72da4e13455af57ecfc5.dir
+      size: 140205
       nfiles: 37
     - path: train/nn_train/train.py
       hash: md5
-      md5: b2f2fe65c97db7bedfbc5aa094d00eef
-      size: 3296
+      md5: 6153ec9f5871dd0438f362a7ea3bfd75
+      size: 3953
     params:
       params.yaml:
         train:
@@ -78,14 +82,18 @@ stages:
     outs:
     - path: artifacts/model.pkl
       hash: md5
-      md5: cf38021ea21f51ceaa51f32a6a138583
+      md5: f02fe185cdf5323adc1dc1fad527c41c
       size: 37435
+    - path: artifacts/train-metrics.json
+      hash: md5
+      md5: da02bb40fd5a7ff2493af7c4f7b62e21
+      size: 97
   evaluate:
     cmd: uv run python -m nn_train.evaluate
     deps:
     - path: artifacts/model.pkl
       hash: md5
-      md5: cf38021ea21f51ceaa51f32a6a138583
+      md5: f02fe185cdf5323adc1dc1fad527c41c
       size: 37435
     - path: artifacts/val_x.npy
       hash: md5
@@ -97,10 +105,10 @@ stages:
       size: 848
     - path: train/nn_train/evaluate.py
       hash: md5
-      md5: 83f7f932699cb937edc85d6fa90577ae
-      size: 2656
+      md5: 80625f3d5166e54caa6507e1c4518162
+      size: 2684
     outs:
-    - path: artifacts/metrics.json
+    - path: artifacts/evaluate-metrics.json
       hash: md5
-      md5: c5a23169b4461e324998b7b9bc9fcff1
+      md5: 05b308b06755d5d9049cdd7170183222
       size: 52

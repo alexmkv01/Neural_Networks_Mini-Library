@@ -20,7 +20,7 @@ dvc push
 
 # Commit pipeline outputs
 git add .
-git commit --allow-empty -m "(feat) dvc pipeline reproduced [skip ci]"
+git commit --allow-empty -m "dvc pipeline reproduced [skip ci]"
 git push
 
 # Build report
@@ -31,7 +31,7 @@ git fetch --prune
     printf "\n"
     printf "### Pipeline Status\n\n"
     dvc status || printf "All stages are up-to-date.\n"
-} > comment.md
+} >comment.md
 
 # Post report as PR comment
 gh pr --repo "$GITHUB_REPOSITORY" \

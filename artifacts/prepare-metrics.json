@@ -1,0 +1,9 @@
+{
+  "total_samples": 150,
+  "train_samples": 120,
+  "val_samples": 30,
+  "train_proportion": 0.8,
+  "val_proportion": 0.2,
+  "n_features": 4,
+  "n_classes": 3
+}

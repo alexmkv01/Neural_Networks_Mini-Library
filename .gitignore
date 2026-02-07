@@ -25,9 +25,6 @@ build/
 *.swp
 *.swo
 
-# DVC pipeline artifacts (reproduced via dvc repro)
-/artifacts/
-
 # Local environment (direnv)
 .envrc
 .direnv/

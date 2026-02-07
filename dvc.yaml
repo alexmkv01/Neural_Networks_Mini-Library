@@ -12,6 +12,9 @@ stages:
       - artifacts/train_y.npy
       - artifacts/val_y.npy
       - artifacts/preprocessor.pkl
+    metrics:
+      - artifacts/prepare-metrics.json:
+          cache: false
 
   train:
     cmd: uv run python -m nn_train.train
@@ -25,6 +28,9 @@ stages:
       - train
     outs:
       - artifacts/model.pkl
+    metrics:
+      - artifacts/train-metrics.json:
+          cache: false
 
   evaluate:
     cmd: uv run python -m nn_train.evaluate
@@ -34,5 +40,5 @@ stages:
       - artifacts/val_y.npy
       - train/nn_train/evaluate.py
     metrics:
-      - artifacts/metrics.json:
+      - artifacts/evaluate-metrics.json:
           cache: false

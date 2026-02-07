@@ -1,5 +1,6 @@
 """Training stage: build network from params, train, save model artifact."""
 
+import json
 import logging
 from pathlib import Path
 from typing import TypedDict, cast
@@ -50,7 +51,7 @@ def _build_and_train(
     x_train: npt.NDArray[np.float64],
     y_train: npt.NDArray[np.float64],
     params: TrainParams,
-) -> MultiLayerNetwork:
+) -> tuple[MultiLayerNetwork, float]:
     """Construct the network and train it.
 
     Args:
@@ -59,7 +60,7 @@ def _build_and_train(
         params: Train stage parameters from params.yaml.
 
     Returns:
-        The trained network.
+        Tuple of the trained network and final training loss.
     """
     input_dim = x_train.shape[1]
     activations = cast(list[ActivationType], params["activations"])
@@ -90,7 +91,7 @@ def _build_and_train(
 
     train_loss = trainer.eval_loss(x_train, y_train)
     logger.info("Final training loss: %.6f", train_loss)
-    return network
+    return network, train_loss
 
 
 def _save_model(network: MultiLayerNetwork) -> None:
@@ -100,6 +101,20 @@ def _save_model(network: MultiLayerNetwork) -> None:
     logger.info("Model saved to %s", model_path)
 
 
+def _save_metrics(train_loss: float, params: TrainParams) -> None:
+    """Write training metrics to artifacts/train-metrics.json."""
+    metrics = {
+        "final_train_loss": round(train_loss, 6),
+        "n_epochs": params["epochs"],
+        "batch_size": params["batch_size"],
+        "learning_rate": params["learning_rate"],
+    }
+    metrics_path = ARTIFACTS_DIR / "train-metrics.json"
+    with open(metrics_path, "w") as f:
+        json.dump(metrics, f, indent=2)
+    logger.info("Train metrics written to %s", metrics_path)
+
+
 def main() -> None:
     """Orchestrate the train stage."""
     # Setup
@@ -107,10 +122,11 @@ def main() -> None:
     x_train, y_train = _load_training_data()
 
     # Train
-    network = _build_and_train(x_train, y_train, params)
+    network, train_loss = _build_and_train(x_train, y_train, params)
 
     # Save
     _save_model(network)
+    _save_metrics(train_loss, params)
 
 
 if __name__ == "__main__":

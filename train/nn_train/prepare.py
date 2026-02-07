@@ -1,5 +1,6 @@
 """Data preparation stage: load, split, preprocess, and save artifacts."""
 
+import json
 import logging
 import pickle
 from pathlib import Path
@@ -88,6 +89,28 @@ def _save_artifacts(
     logger.info("Saved artifacts to %s", ARTIFACTS_DIR)
 
 
+def _save_metrics(
+    x_train: npt.NDArray[np.float64],
+    x_val: npt.NDArray[np.float64],
+    y_train: npt.NDArray[np.float64],
+) -> None:
+    """Write data split metrics to artifacts/prepare-metrics.json."""
+    total = x_train.shape[0] + x_val.shape[0]
+    metrics = {
+        "total_samples": total,
+        "train_samples": x_train.shape[0],
+        "val_samples": x_val.shape[0],
+        "train_proportion": round(x_train.shape[0] / total, 4),
+        "val_proportion": round(x_val.shape[0] / total, 4),
+        "n_features": x_train.shape[1],
+        "n_classes": y_train.shape[1],
+    }
+    metrics_path = ARTIFACTS_DIR / "prepare-metrics.json"
+    with open(metrics_path, "w") as f:
+        json.dump(metrics, f, indent=2)
+    logger.info("Prepare metrics written to %s", metrics_path)
+
+
 def main() -> None:
     """Orchestrate the prepare stage."""
     # Setup
@@ -101,6 +124,7 @@ def main() -> None:
 
     # Save
     _save_artifacts(x_train, x_val, y_train, y_val, preprocessor)
+    _save_metrics(x_train, x_val, y_train)
 
 
 if __name__ == "__main__":

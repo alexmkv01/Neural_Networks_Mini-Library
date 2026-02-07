@@ -1,4 +1,4 @@
-"""Evaluation stage: load model, compute metrics, write metrics.json."""
+"""Evaluation stage: load model, compute metrics, write evaluate-metrics.json."""
 
 import json
 import logging
@@ -70,8 +70,8 @@ def evaluate(
 
 
 def _save_metrics(metrics: dict[str, float]) -> None:
-    """Write metrics dict to artifacts/metrics.json."""
-    metrics_path = ARTIFACTS_DIR / "metrics.json"
+    """Write metrics dict to artifacts/evaluate-metrics.json."""
+    metrics_path = ARTIFACTS_DIR / "evaluate-metrics.json"
     with open(metrics_path, "w") as f:
         json.dump(metrics, f, indent=2)
     logger.info("Metrics written to %s", metrics_path)
