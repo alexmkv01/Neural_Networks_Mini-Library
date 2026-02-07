@@ -1,78 +1,148 @@
 # Neural Network Mini-Library
-Welcome to the Neural Network Mini-Library repository! This project is a low-level implementation of a multi-layered neural network, including a basic implementation of the backpropagation algorithm. It was created as part of the Introduction to Machine Learning module at Imperial College London. The library was tested using the Iris dataset.
 
-## Features ## 
-  - Implementation of a linear layer class
-  - Implementation of activation function classes
-    - Sigmoid
-    - ReLU
-    - Tanh
-  - Implementation of a multi-layer network class
-  - Implementation of a trainer class 
-  - Implementation of a data preprocessing class
+A from-scratch neural network library built with NumPy, structured as a modern Python monorepo with a reproducible DVC training pipeline.
 
-## Requirements ## 
-  - NumPy
+Originally created as coursework for the Introduction to Machine Learning module at Imperial College London, now refactored with professional ML engineering practices.
 
-## Usage ## 
-To use the mini-library, simply import the necessary classes and functions from the **`nn`** module.
+## Project Structure
 
-```python
-from nn import LinearLayer, ReLU, Sigmoid, Tanh, MultiLayerNetwork, Trainer, Preprocessor
+```
+.
+├── lib/                          # nn-lib: the neural network library
+│   ├── pyproject.toml
+│   └── nn_lib/
+│       ├── base.py               # Abstract Layer base class
+│       ├── activations.py        # ReLU, Sigmoid, Tanh, Identity
+│       ├── layers.py             # LinearLayer (fully connected)
+│       ├── losses.py             # MSE, Cross-Entropy with softmax
+│       ├── network.py            # MultiLayerNetwork
+│       ├── trainer.py            # Mini-batch SGD trainer
+│       ├── preprocessing.py      # Min-max normalization
+│       ├── initializers.py       # Xavier, He, zeros
+│       └── tests/                # Unit tests with numerical gradient checks
+├── train/                        # nn-train: DVC training pipeline
+│   ├── pyproject.toml
+│   └── nn_train/
+│       ├── prepare.py            # Data loading, splitting, preprocessing
+│       ├── train.py              # Model construction and training
+│       ├── evaluate.py           # Evaluation and metrics output
+│       └── tests/                # Pipeline smoke tests
+├── data/                         # DVC-tracked data (fetched via dvc pull)
+│   └── iris.dat.dvc
+├── artifacts/                    # Pipeline outputs (reproduced via dvc repro)
+│   └── metrics.json
+├── dvc.yaml                      # Pipeline definition
+├── params.yaml                   # Hyperparameters
+├── pyproject.toml                # uv workspace root
+└── .github/workflows/ci.yml     # Lint, type-check, test
 ```
 
-### Linear Layer ###
-To create a linear layer, simply instantiate the **`LinearLayer`** class with the appropriate input and output dimensions.
+## Setup
 
-```python
-linear_layer = LinearLayer(input_dim, output_dim)
-```
-You can then use the **`forward`** and **`backward`** methods to perform the forward and backward passes, respectively.
+Requires [uv](https://docs.astral.sh/uv/) and Python 3.12+.
 
-```python
-output = linear_layer.forward(input)
-linear_layer.backward(error)
+```bash
+git clone <repository-url>
+cd Neural_Networks_Mini-Library
+uv sync --all-packages
 ```
 
-### Activation Functions ###
+## Running the Pipeline
 
-The activation function classes ( **`ReLU`**,  **`Sigmoid`**, and  **`Tanh`**) can be used in the same way as the linear layer. Simply instantiate the class and use the **`forward`** and **`backward`** methods to perform the forward and backward passes.
+The training pipeline is managed by [DVC](https://dvc.org/):
 
-```python
-relu = ReLU()
-output = relu.forward(input)
-relu.backward(error)
+```bash
+# Fetch data (requires configured S3 remote)
+uv run dvc pull
+
+# Run the full pipeline: prepare -> train -> evaluate
+uv run dvc repro
+
+# View metrics
+uv run dvc metrics show
 ```
 
-### Multi-Layer Network ###
-To create a multi-layer network, you can use the  **`MultiLayerNetwork`** class. Simply pass in a list of layers (linear or activation function layers) to the constructor.
+### Pipeline Stages
 
-```python
-layers = [LinearLayer(input_dim, hidden_dim), ReLU(), LinearLayer(hidden_dim, output_dim)]
-network = MultiLayerNetwork(layers)
+| Stage | Script | Description |
+|-------|--------|-------------|
+| `prepare` | `nn_train.prepare` | Load iris.dat, train/val split, fit preprocessor |
+| `train` | `nn_train.train` | Build network from `params.yaml`, train with SGD |
+| `evaluate` | `nn_train.evaluate` | Compute val loss and accuracy, write `metrics.json` |
+
+### Hyperparameters
+
+All tunable values live in `params.yaml`:
+
+```yaml
+prepare:
+  test_split: 0.2
+  random_seed: 42
+
+train:
+  neurons: [16, 3]
+  activations: ["relu", "identity"]
+  batch_size: 8
+  epochs: 1000
+  learning_rate: 0.01
+  loss_fun: "cross_entropy"
+  shuffle: true
 ```
 
-You can then use the **`forward`** and **`backward`** methods to perform the forward and backward passes through the entire network.
+## Development
 
-```python
-output = network.forward(input)
-network.backward(error)
+```bash
+# Lint and format
+uv run ruff format lib/ train/
+uv run ruff check lib/ train/
+
+# Type checking (strict)
+uv run mypy lib/nn_lib/ train/nn_train/
+
+# Run tests
+uv run pytest -v
+
+# Run tests with coverage
+uv run pytest --cov=nn_lib --cov=nn_train -v
 ```
 
-### Trainer ###
-The **`Trainer class`** can be used to train the multi-layer network on a dataset. Simply instantiate the class with the network and the dataset, and then use the **`train`** method to perform the training.
+## Library Usage
 
 ```python
-trainer = Trainer(network, dataset)
-trainer.train(num_epochs)
+from nn_lib import MultiLayerNetwork, Preprocessor, Trainer, TrainerHyperparams
+
+import numpy as np
+
+# Preprocess
+data = np.loadtxt("data/iris.dat")
+x, y = data[:, :4], data[:, 4:]
+prep = Preprocessor(x)
+x_norm = prep.apply(x)
+
+# Build network: 4 -> 16 (relu) -> 3 (identity + softmax in loss)
+net = MultiLayerNetwork(input_dim=4, neurons=[16, 3], activations=["relu", "identity"])
+
+# Train
+hyperparams: TrainerHyperparams = {
+    "batch_size": 8,
+    "nb_epoch": 1000,
+    "learning_rate": 0.01,
+    "loss_fun": "cross_entropy",
+    "shuffle_flag": True,
+}
+trainer = Trainer(network=net, hyperparams=hyperparams)
+trainer.train(x_norm, y)
+print(f"Loss: {trainer.eval_loss(x_norm, y):.4f}")
 ```
 
-### Preprocessor ###
-The **`Preprocessor`** class can be used to preprocess the data before training. Simply instantiate the class with the dataset, and then use the **`preprocess`** method to perform the preprocessing.
+## DVC Remote Configuration
 
-```python
-preprocessor = Preprocessor(dataset)
-preprocessor.preprocess()
+The S3 remote is configured as a placeholder. To set up your own:
+
+```bash
+# Update the remote URL
+uv run dvc remote modify s3remote url s3://your-bucket/path
+
+# Push data
+uv run dvc push
 ```
-
-
