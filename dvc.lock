@@ -58,9 +58,9 @@ stages:
       size: 3008
     - path: lib/nn_lib/
       hash: md5
-      md5: e4007381582e72da4e13455af57ecfc5.dir
-      size: 140205
-      nfiles: 37
+      md5: a64712e3ab11b2a5c5076377e7f23e89.dir
+      size: 69654
+      nfiles: 28
     - path: train/nn_train/train.py
       hash: md5
       md5: 6153ec9f5871dd0438f362a7ea3bfd75
@@ -82,18 +82,18 @@ stages:
     outs:
     - path: artifacts/model.pkl
       hash: md5
-      md5: f02fe185cdf5323adc1dc1fad527c41c
+      md5: 5986d4c74f3fbee8feebff0d663cd257
       size: 37435
     - path: artifacts/train-metrics.json
       hash: md5
-      md5: da02bb40fd5a7ff2493af7c4f7b62e21
+      md5: e51dbb1c790f9834f247880b405c7aa0
       size: 97
   evaluate:
     cmd: uv run python -m nn_train.evaluate
     deps:
     - path: artifacts/model.pkl
       hash: md5
-      md5: f02fe185cdf5323adc1dc1fad527c41c
+      md5: 5986d4c74f3fbee8feebff0d663cd257
       size: 37435
     - path: artifacts/val_x.npy
       hash: md5
@@ -110,5 +110,5 @@ stages:
     outs:
     - path: artifacts/evaluate-metrics.json
       hash: md5
-      md5: 05b308b06755d5d9049cdd7170183222
+      md5: 0947a15e880138b8153694a97c6018eb
       size: 52
