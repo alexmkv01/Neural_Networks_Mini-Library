@@ -5,3 +5,5 @@
 /val_y.npy
 /preprocessor.pkl
 /model.pkl
+/test_x.npy
+/test_y.npy

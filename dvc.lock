@@ -9,62 +9,102 @@ stages:
       size: 26250
     - path: train/nn_train/prepare.py
       hash: md5
-      md5: 381091159e27d9b44abadcd232dbe19f
-      size: 4441
+      md5: 51b12516de91b4bef3e79ba38ddbe15d
+      size: 5635
     params:
       params.yaml:
         prepare:
-          test_split: 0.2
+          val_split: 0.15
+          test_split: 0.15
           random_seed: 42
     outs:
     - path: artifacts/prepare-metrics.json
       hash: md5
-      md5: 31d04745123278132ce90e31ce33d0fa
-      size: 160
+      md5: d76f8289c58c338297c2d6a279040f4f
+      size: 217
     - path: artifacts/preprocessor.pkl
       hash: md5
-      md5: e2943fd9ca837573e5a661639b26d7f4
+      md5: 8e902de443ad998f480ede7621c59f2e
       size: 448
+    - path: artifacts/test_x.npy
+      hash: md5
+      md5: dc67536ddefc52ed9128d854980b8b02
+      size: 832
+    - path: artifacts/test_y.npy
+      hash: md5
+      md5: d3bbf1582f6255854733bfe711fc26e5
+      size: 656
     - path: artifacts/train_x.npy
       hash: md5
-      md5: 787a7809fc409865b017f1ce99b97649
-      size: 3968
+      md5: 61c868b4503d4df0a06815de86196cd8
+      size: 3520
     - path: artifacts/train_y.npy
       hash: md5
-      md5: 84f58d8444c3f42dc84f3d6306f8a80e
-      size: 3008
+      md5: d7c892871454cdc026271df772784bb1
+      size: 2672
     - path: artifacts/val_x.npy
       hash: md5
-      md5: c88fef2f8c0680e7244ba3ffde17c3f8
-      size: 1088
+      md5: e4ab09531d4d5050aa319907cc66ab4d
+      size: 832
     - path: artifacts/val_y.npy
       hash: md5
-      md5: af2b4ae0b490f293573aca3559f3846d
-      size: 848
+      md5: 7e3d839ef3a4dbe12a2fe4fa287434da
+      size: 656
   train:
     cmd: uv run python -m nn_train.train
     deps:
     - path: artifacts/preprocessor.pkl
       hash: md5
-      md5: e2943fd9ca837573e5a661639b26d7f4
+      md5: 8e902de443ad998f480ede7621c59f2e
       size: 448
     - path: artifacts/train_x.npy
       hash: md5
-      md5: 787a7809fc409865b017f1ce99b97649
-      size: 3968
+      md5: 61c868b4503d4df0a06815de86196cd8
+      size: 3520
     - path: artifacts/train_y.npy
       hash: md5
-      md5: 84f58d8444c3f42dc84f3d6306f8a80e
-      size: 3008
-    - path: lib/nn_lib/
+      md5: d7c892871454cdc026271df772784bb1
+      size: 2672
+    - path: lib/nn_lib/activations.py
       hash: md5
-      md5: a64712e3ab11b2a5c5076377e7f23e89.dir
-      size: 69654
-      nfiles: 28
+      md5: 8f1b6dec4ba5dad37100e50bb525f4e1
+      size: 2148
+    - path: lib/nn_lib/base.py
+      hash: md5
+      md5: e42e2ae6e7b0672d924c56fbda91856b
+      size: 787
+    - path: lib/nn_lib/exceptions.py
+      hash: md5
+      md5: 8ac079d4ff25a54e3c33be71dc9951bb
+      size: 556
+    - path: lib/nn_lib/initializers.py
+      hash: md5
+      md5: 0232c1b1c162d74e59d5a47da07204b0
+      size: 1571
+    - path: lib/nn_lib/layers.py
+      hash: md5
+      md5: d67eaafcecc188f048c6df4eeeb7127e
+      size: 2101
+    - path: lib/nn_lib/losses.py
+      hash: md5
+      md5: 302195510b10eb890e62b41e8d0b8110
+      size: 3613
+    - path: lib/nn_lib/network.py
+      hash: md5
+      md5: a360324e33cd3e0a585c64d6deced620
+      size: 3952
+    - path: lib/nn_lib/preprocessing.py
+      hash: md5
+      md5: 7485c9b78ec06d78db08cab79a0e2a5f
+      size: 1532
+    - path: lib/nn_lib/trainer.py
+      hash: md5
+      md5: da6ec9ddab9af221250ef39fae50ad09
+      size: 3139
     - path: train/nn_train/train.py
       hash: md5
-      md5: 6153ec9f5871dd0438f362a7ea3bfd75
-      size: 3953
+      md5: b3d179aced14e882a0ef66fe6bf461c2
+      size: 5126
     params:
       params.yaml:
         train:
@@ -77,38 +117,46 @@ stages:
           batch_size: 8
           epochs: 1000
           learning_rate: 0.01
-          loss_fun: cross_entropy
+          loss: cross_entropy
           shuffle: true
     outs:
     - path: artifacts/model.pkl
       hash: md5
-      md5: 5986d4c74f3fbee8feebff0d663cd257
-      size: 37435
+      md5: ad582ec2d6e5f55cf59fdb7f4e078639
+      size: 33456
     - path: artifacts/train-metrics.json
       hash: md5
-      md5: e51dbb1c790f9834f247880b405c7aa0
-      size: 97
+      md5: eade67b5b7117259ef48a60fccb4a7b4
+      size: 98
   evaluate:
     cmd: uv run python -m nn_train.evaluate
     deps:
     - path: artifacts/model.pkl
       hash: md5
-      md5: 5986d4c74f3fbee8feebff0d663cd257
-      size: 37435
+      md5: ad582ec2d6e5f55cf59fdb7f4e078639
+      size: 33456
+    - path: artifacts/test_x.npy
+      hash: md5
+      md5: dc67536ddefc52ed9128d854980b8b02
+      size: 832
+    - path: artifacts/test_y.npy
+      hash: md5
+      md5: d3bbf1582f6255854733bfe711fc26e5
+      size: 656
     - path: artifacts/val_x.npy
       hash: md5
-      md5: c88fef2f8c0680e7244ba3ffde17c3f8
-      size: 1088
+      md5: e4ab09531d4d5050aa319907cc66ab4d
+      size: 832
     - path: artifacts/val_y.npy
       hash: md5
-      md5: af2b4ae0b490f293573aca3559f3846d
-      size: 848
+      md5: 7e3d839ef3a4dbe12a2fe4fa287434da
+      size: 656
     - path: train/nn_train/evaluate.py
       hash: md5
-      md5: 80625f3d5166e54caa6507e1c4518162
-      size: 2684
+      md5: d06782bb7a9f52f7b29632f54db813a4
+      size: 2878
     outs:
     - path: artifacts/evaluate-metrics.json
       hash: md5
-      md5: 0947a15e880138b8153694a97c6018eb
-      size: 52
+      md5: 9ed308f97a36972d508f8921a5980660
+      size: 101

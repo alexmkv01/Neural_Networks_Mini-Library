@@ -1,4 +1,6 @@
 {
-  "val_loss": 0.056274,
-  "val_accuracy": 0.9667
+  "val_loss": 0.066362,
+  "val_accuracy": 1.0,
+  "test_loss": 0.124467,
+  "test_accuracy": 0.9545
 }
