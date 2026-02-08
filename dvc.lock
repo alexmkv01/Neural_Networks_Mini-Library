@@ -1,0 +1,114 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: uv run python -m nn_train.prepare
+    deps:
+    - path: data/iris.dat
+      hash: md5
+      md5: 6d15b663e52a30d276150d4d5b7ecc14
+      size: 26250
+    - path: train/nn_train/prepare.py
+      hash: md5
+      md5: 381091159e27d9b44abadcd232dbe19f
+      size: 4441
+    params:
+      params.yaml:
+        prepare:
+          test_split: 0.2
+          random_seed: 42
+    outs:
+    - path: artifacts/prepare-metrics.json
+      hash: md5
+      md5: 31d04745123278132ce90e31ce33d0fa
+      size: 160
+    - path: artifacts/preprocessor.pkl
+      hash: md5
+      md5: e2943fd9ca837573e5a661639b26d7f4
+      size: 448
+    - path: artifacts/train_x.npy
+      hash: md5
+      md5: 787a7809fc409865b017f1ce99b97649
+      size: 3968
+    - path: artifacts/train_y.npy
+      hash: md5
+      md5: 84f58d8444c3f42dc84f3d6306f8a80e
+      size: 3008
+    - path: artifacts/val_x.npy
+      hash: md5
+      md5: c88fef2f8c0680e7244ba3ffde17c3f8
+      size: 1088
+    - path: artifacts/val_y.npy
+      hash: md5
+      md5: af2b4ae0b490f293573aca3559f3846d
+      size: 848
+  train:
+    cmd: uv run python -m nn_train.train
+    deps:
+    - path: artifacts/preprocessor.pkl
+      hash: md5
+      md5: e2943fd9ca837573e5a661639b26d7f4
+      size: 448
+    - path: artifacts/train_x.npy
+      hash: md5
+      md5: 787a7809fc409865b017f1ce99b97649
+      size: 3968
+    - path: artifacts/train_y.npy
+      hash: md5
+      md5: 84f58d8444c3f42dc84f3d6306f8a80e
+      size: 3008
+    - path: lib/nn_lib/
+      hash: md5
+      md5: a64712e3ab11b2a5c5076377e7f23e89.dir
+      size: 69654
+      nfiles: 28
+    - path: train/nn_train/train.py
+      hash: md5
+      md5: 6153ec9f5871dd0438f362a7ea3bfd75
+      size: 3953
+    params:
+      params.yaml:
+        train:
+          neurons:
+          - 16
+          - 3
+          activations:
+          - relu
+          - identity
+          batch_size: 8
+          epochs: 1000
+          learning_rate: 0.01
+          loss_fun: cross_entropy
+          shuffle: true
+    outs:
+    - path: artifacts/model.pkl
+      hash: md5
+      md5: 5986d4c74f3fbee8feebff0d663cd257
+      size: 37435
+    - path: artifacts/train-metrics.json
+      hash: md5
+      md5: e51dbb1c790f9834f247880b405c7aa0
+      size: 97
+  evaluate:
+    cmd: uv run python -m nn_train.evaluate
+    deps:
+    - path: artifacts/model.pkl
+      hash: md5
+      md5: 5986d4c74f3fbee8feebff0d663cd257
+      size: 37435
+    - path: artifacts/val_x.npy
+      hash: md5
+      md5: c88fef2f8c0680e7244ba3ffde17c3f8
+      size: 1088
+    - path: artifacts/val_y.npy
+      hash: md5
+      md5: af2b4ae0b490f293573aca3559f3846d
+      size: 848
+    - path: train/nn_train/evaluate.py
+      hash: md5
+      md5: 80625f3d5166e54caa6507e1c4518162
+      size: 2684
+    outs:
+    - path: artifacts/evaluate-metrics.json
+      hash: md5
+      md5: 0947a15e880138b8153694a97c6018eb
+      size: 52
