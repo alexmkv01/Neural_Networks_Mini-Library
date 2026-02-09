@@ -1,8 +1,17 @@
 # Neural Network Mini-Library
 
-A from-scratch neural network library built with NumPy, structured as a modern Python monorepo with a reproducible DVC training pipeline.
+A from-scratch neural network library built with NumPy, plus a fully trained classifier on the Iris dataset — structured as a modern Python monorepo with a reproducible DVC training pipeline.
 
 Originally created as coursework for the Introduction to Machine Learning module at Imperial College London, now refactored with professional ML engineering practices.
+
+## Papers & Theory
+
+Implements from scratch:
+
+- Backpropagation and gradient descent as formalised in *Learning representations by back-propagating errors* (Rumelhart, Hinton & Williams, 1986)
+- Xavier/Glorot weight initialisation — *Understanding the difficulty of training deep feedforward neural networks* (Glorot & Bengio, 2010)
+- He/Kaiming initialisation for ReLU networks — *Delving Deep into Rectifiers* (He et al., 2015)
+- Softmax cross-entropy loss with the log-sum-exp trick for numerical stability — *Training Stochastic Model Recognition Algorithms as Networks can Lead to Maximum Mutual Information Estimation of Parameters* (Bridle, 1989)
 
 ## Project Structure
 
